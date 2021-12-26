@@ -5,6 +5,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from employee.models import Employee
 from restaurant.tests.factory import RestaurantFactory
 from restaurant.models import Restaurant
 
@@ -13,56 +14,64 @@ fake = Faker()
 
 class RestaurantTest(APITestCase):
     def setUp(self):
-        # user = Employee.objects.create(email='user@example.com')
-        # self.client.force_authenticate(user=user)
+        user = Employee.objects.create(email='user@example.com')
+        self.client.force_authenticate(user=user)
 
         self.valid_payload = {"name": fake.name(), "address": fake.address()}
-        self.invalid_payload = {"name": fake.name()}
 
-    def test_create_employee(self):
+    def test_create_restaurant(self):
         response = self.client.post(
-            reverse("restaurants:restaurants-list"),
+            reverse("restaurant:restaurant-list"),
             data=json.dumps(self.valid_payload),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data.get("email"), self.valid_payload.get("email"))
 
-    # def test_create_employee_without_email_400(self):
-    #     response = self.client.post(
-    #         reverse("employee:employee-list"),
-    #         data=json.dumps(self.invalid_payload),
-    #         content_type="application/json",
-    #     )
-    #     self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-    #
-    # def test_update_employee(self):
-    #     data = {"first_name": "name"}
-    #     employee = EmployeeFactory()
-    #     response = self.client.patch(
-    #         reverse("employee:employee-detail", args=[employee.id]),
-    #         data=json.dumps(data),
-    #         content_type="application/json",
-    #     )
-    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-    #     self.assertEqual(response.data.get("first_name"), data.get("first_name"))
-    #
-    # def test_employee_details(self):
-    #     employee = EmployeeFactory()
-    #     response = self.client.get(
-    #         reverse("employee:employee-detail", args=[employee.id])
-    #     )
-    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-    #     self.assertEqual(response.data.get("id"), employee.id)
-    #     self.assertEqual(response.data.get("email"), employee.email)
-    #
-    # def test_delete_employee(self):
-    #     employee = EmployeeFactory()
-    #     employee_count = Employee.objects.count()
-    #     self.assertEqual(employee_count, 2)
-    #     response = self.client.delete(
-    #         reverse("employee:employee-detail", args=[employee.id])
-    #     )
-    #     employee_count = Employee.objects.count()
-    #     self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-    #     self.assertEqual(employee_count, 1)
+    def test_create_restaurant_without_name_400(self):
+        response = self.client.post(
+            reverse("restaurant:restaurant-list"),
+            data=json.dumps({"address": fake.address()}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_restaurant_without_address_400(self):
+        response = self.client.post(
+            reverse("restaurant:restaurant-list"),
+            data=json.dumps({"name": fake.name()}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_restaurant(self):
+        data = {"name": "name"}
+        restaurant = RestaurantFactory()
+        response = self.client.patch(
+            reverse("restaurant:restaurant-detail", args=[restaurant.id]),
+            data=json.dumps(data),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get("name"), data.get("name"))
+
+    def test_restaurant_details(self):
+        restaurant = RestaurantFactory()
+        response = self.client.get(
+            reverse("restaurant:restaurant-detail", args=[restaurant.id])
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get("id"), restaurant.id)
+        self.assertEqual(response.data.get("name"), restaurant.name)
+
+    def test_delete_restaurant(self):
+        _ = RestaurantFactory()
+        restaurant = RestaurantFactory()
+        restaurant_count = Restaurant.objects.count()
+        self.assertEqual(restaurant_count, 2)
+        response = self.client.delete(
+            reverse("restaurant:restaurant-detail", args=[restaurant.id])
+        )
+        restaurant_count = Restaurant.objects.count()
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(restaurant_count, 1)
