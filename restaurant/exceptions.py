@@ -1,0 +1,2 @@
+class MenuExistsException(Exception):
+    pass
